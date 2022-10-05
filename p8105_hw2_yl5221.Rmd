@@ -1,0 +1,139 @@
+---
+title: "p8105_hw2_yl5221"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+```
+
+## Problem 1
+
+#### Describing Data
+
+The data set has 1868 rows and 20 columns. It contains subway line, station name, route 1-11. My data cleaning first change the column types of route8-11 to character columns. Then I cleaned names of columns. next I selected the columns needed from the csv. Last but not least, there's mutation of character to logical variable.
+
+```{r}
+trans_ent = 
+  read_csv(
+    "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
+    col_types = cols(Route8 = "c", Route9 = "c", Route10 = "c", Route11 = "c")) %>% 
+  janitor::clean_names() %>% 
+  select(
+    line, station_name, station_latitude, station_longitude, 
+    starts_with("route"), entry, exit_only, vending, entrance_type, 
+    ada) %>% 
+  mutate(entry = ifelse(entry == "YES", TRUE, FALSE))
+```
+
+#### 1.
+
+There's 465 distinct stations in different lines.
+
+```{r}
+trans_ent %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+#### 2. 
+
+There are 84 stations which are ADA compliant.
+
+```{r}
+trans_ent %>% 
+  filter(ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+#### 3.
+
+The proportion is 0.377.
+```{r}
+trans_ent %>% 
+  filter(vending == "NO") %>% 
+  pull(entry) %>% 
+  mean
+```
+
+#### 4.
+60 distinct stations serve A train. Along A train stations, 17 of them are ada compliant.
+```{r}
+trans_ent %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A") %>% 
+  select(station_name, line) %>% 
+  distinct
+
+trans_ent %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A", ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+
+## Problem 2
+ 
+#### Load in and data cleaning for mr_trash_df
+```{r}
+mr_trash_df = readxl::read_excel(
+  "./data/Trash Wheel Collection Data.xlsx", 
+  sheet = "Mr. Trash Wheel",
+  range = ("A2:N550")) %>%
+  janitor::clean_names() %>% 
+  drop_na(., dumpster) %>% 
+  mutate(sports_balls = as.integer(round(sports_balls)), df = c("mr")) 
+```
+
+
+#### Data cleaning for p_trash_df
+```{r}
+p_trash_df =
+  readxl::read_excel(
+    "./data/Trash Wheel Collection Data.xlsx",
+    sheet = "Professor Trash Wheel",
+    range = "A2:M97") %>% 
+  janitor::clean_names() %>% 
+  drop_na(., dumpster) %>% 
+  mutate(df = c("p")) 
+```
+
+#### Join two tables
+Joining two tables by "dumpster", we get 547 observations of 28 variables. Sports_balls only exist in mr_trash_df. While other variables exist in both data frames. We can use the suffix ".x" and ".y" or df variable I created to seperate them. Total weight of trash collected by Professor Trash Wheel is 190.12 tons. Total number of sports balls collected by Mr. Trash Wheel in 2020 is 856.
+```{r}
+trash_df =
+  left_join(mr_trash_df, p_trash_df, by = "dumpster") 
+```
+
+```{r}
+sum(trash_df$weight_tons.y, na.rm = TRUE)
+trash_df %>% 
+  filter(year.x == "2020") %>% 
+  summarize(sum(sports_balls))
+```
+#### Problem 3
+
+```{r}
+pols_df =
+  read_csv(
+    "./data/fivethirtyeight_datasets/pols-month.csv") %>% 
+  separate(mon, into = c("year", "month", "day"), sep = "-") %>% 
+  mutate(month = recode(month, "1" = "Jan", "2" = "Feb", "3" = "Mar", "4" = "Apr", "5" = "May", "6" = "Jun", "7" = "Jul", "8" = "Aug", "9" = "Sep", "10" = "Oct", "11" = "Nov", "12" = "Dec")) %>% 
+  
+  select(-day, -prez_dem, -gov_dem)
+```
+
