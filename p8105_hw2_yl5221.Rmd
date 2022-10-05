@@ -125,15 +125,39 @@ trash_df %>%
   filter(year.x == "2020") %>% 
   summarize(sum(sports_balls))
 ```
-#### Problem 3
+## Problem 3
 
+#### Load in and clean pols-month.csv
 ```{r}
 pols_df =
   read_csv(
     "./data/fivethirtyeight_datasets/pols-month.csv") %>% 
   separate(mon, into = c("year", "month", "day"), sep = "-") %>% 
-  mutate(month = recode(month, "1" = "Jan", "2" = "Feb", "3" = "Mar", "4" = "Apr", "5" = "May", "6" = "Jun", "7" = "Jul", "8" = "Aug", "9" = "Sep", "10" = "Oct", "11" = "Nov", "12" = "Dec")) %>% 
-  
+  mutate(month = recode(as.numeric(month), "1" = "Jan", "2" = "Feb", "3" = "Mar", "4" = "Apr", "5" = "May", "6" = "Jun", "7" = "Jul", "8" = "Aug", "9" = "Sep", "10" = "Oct", "11" = "Nov", "12" = "Dec")) %>% 
+  mutate(., president = ifelse(prez_gop == 1, "gop", ifelse(prez_gop == 0, "dem", "other"))) %>% 
   select(-day, -prez_dem, -gov_dem)
 ```
+
+#### Load in and clean snp.csv
+```{r}
+snp_df =
+  read_csv("./data/fivethirtyeight_datasets/snp.csv") %>% 
+  separate(date, into = c("month", "day", "year"), sep = "/") %>% 
+  mutate(month = recode(as.numeric(month), "1" = "Jan", "2" = "Feb", "3" = "Mar", "4" = "Apr", "5" = "May", "6" = "Jun", "7" = "Jul", "8" = "Aug", "9" = "Sep", "10" = "Oct", "11" = "Nov", "12" = "Dec")) %>% 
+  mutate(year = ifelse(year <= 15, as.numeric(year) + 2000, as.numeric(year) + 1900)) %>% 
+  arrange(year, month) %>% 
+  relocate(year, month)
+```
+
+#### Clean unemployment.csv 
+```{r}
+unemployment_df =
+  read_csv("./data/fivethirtyeight_datasets/unemployment.csv") %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    jan:dec,
+    names_to = "month", 
+    values_to = "data")
+```
+
 
